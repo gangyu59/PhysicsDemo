@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Physics Demo</title>
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <link rel="manifest" href="/manifest.json">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <canvas id="myCanvas" width="900" height="700" style="border:1px solid #000000;"></canvas>
+    <div class="button-container">
+        <button id="showLiquidEvaporation">Liquid Evaporation</button>
+        <button id="showCrystallization">Crystallization</button>
+        <button id="showSolidMelting">Solid Melting</button>
+        <button id="showGasLiquefaction">Gas Liquefaction</button>
+        <button id="showElectromagneticConversion">Electromagnetic Conversion</button>
+        <button id="showLightInterference">Light Interference</button>
+        <button id="showSoundDiffraction">Sound Diffraction</button>
+        <button id="showWaterSiphon">Water Siphon</button>
+        <button id="showSurfaceTension">Surface Tension</button>
+        <button id="showLightReflectionRefraction">Light Reflection & Refraction</button>
+    </div>
+
+    <script src="static/js/liquidEvaporation.js"></script>
+    <script src="static/js/crystallization.js"></script>
+    <script src="static/js/solidMelting.js"></script>
+    <script src="static/js/gasLiquefaction.js"></script>
+    <script src="static/js/electromagneticConversion.js"></script>
+    <script src="static/js/lightInterference.js"></script>
+    <script src="static/js/soundDiffraction.js"></script>
+    <script src="static/js/waterSiphon.js"></script>
+    <script src="static/js/surfaceTension.js"></script>
+    <script src="static/js/lightReflectionRefraction.js"></script>
+    <script src="static/js/main.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
