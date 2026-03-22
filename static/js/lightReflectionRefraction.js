@@ -1,87 +1,167 @@
 function startLightReflectionRefraction(canvas, ctx, clearCanvasAndStop) {
     clearCanvasAndStop();
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const prismWidth = 200;
-    const prismHeight = 200;
 
-    let whiteLightX = 0;
-    const whiteLightSpeed = 2;
-    const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'];
-    const angles = [10, 12, 14.5, 17.5, 21, 25, 29.5]; // 向下折射的角度
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2 + 20;
+    const prismW = 220;
+    const prismH = 200;
 
-    let spectrumStartX = null;
-    const spectrumSpeed = 2;
-    let spectrumPositions = [];
+    // Prism vertices (equilateral-ish triangle)
+    const pA = { x: cx, y: cy - prismH / 2 };          // apex
+    const pBL = { x: cx - prismW / 2, y: cy + prismH / 2 }; // bottom-left
+    const pBR = { x: cx + prismW / 2, y: cy + prismH / 2 }; // bottom-right
+
+    const colors = [
+        { c: '#ff4444', angle: 8,  label: 'Red' },
+        { c: '#ff8800', angle: 10, label: 'Orange' },
+        { c: '#ffee00', angle: 12, label: 'Yellow' },
+        { c: '#44dd44', angle: 14, label: 'Green' },
+        { c: '#4488ff', angle: 17, label: 'Blue' },
+        { c: '#8844ff', angle: 20, label: 'Violet' }
+    ];
+
+    // Animated incident beam (moving dot)
+    let beamX = 60;
+    const beamY = cy;
+    const beamSpeed = 2;
+
+    // Entry point on left prism face
+    const entryX = cx - prismW / 4;
+    const entryY = cy;
+
+    // Exit point on right prism face
+    const exitX = cx + prismW / 4;
+    const exitY = cy + 20;
+
+    function drawBackground() {
+        ctx.fillStyle = '#050510';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     function drawPrism() {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; // 半透明白色
+        // Glass fill
+        ctx.fillStyle = 'rgba(100, 160, 220, 0.12)';
         ctx.beginPath();
-        ctx.moveTo(centerX - prismWidth / 2, centerY + prismHeight / 2);
-        ctx.lineTo(centerX + prismWidth / 2, centerY + prismHeight / 2);
-        ctx.lineTo(centerX, centerY - prismHeight / 2);
+        ctx.moveTo(pA.x, pA.y);
+        ctx.lineTo(pBL.x, pBL.y);
+        ctx.lineTo(pBR.x, pBR.y);
         ctx.closePath();
         ctx.fill();
-    }
 
-    function drawWhiteLight() {
-        ctx.setLineDash([10, 5]);
-        ctx.strokeStyle = 'white';
+        // Glass edges
+        ctx.strokeStyle = 'rgba(140, 200, 255, 0.6)';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(whiteLightX, centerY);
-        ctx.lineTo(centerX - prismWidth / 4, centerY);
+        ctx.moveTo(pA.x, pA.y);
+        ctx.lineTo(pBL.x, pBL.y);
+        ctx.lineTo(pBR.x, pBR.y);
+        ctx.closePath();
         ctx.stroke();
+
+        // Label
+        ctx.font = '12px "Space Grotesk", sans-serif';
+        ctx.fillStyle = 'rgba(140, 180, 220, 0.6)';
+        ctx.textAlign = 'center';
+        ctx.fillText('Glass Prism', cx, pBL.y + 22);
+        ctx.textAlign = 'left';
     }
 
-    function drawSpectrum() {
-        const refractionPointX = centerX - prismWidth / 4;
-        const exitPointX = centerX + prismWidth / 4;
+    function drawIncidentBeam() {
+        // White beam from left to prism entry point
+        const progress = Math.min(1, beamX / entryX);
+        const endX = beamX;
 
-        colors.forEach((color, index) => {
-            const angle = angles[index] * (Math.PI / 180); // 转换为弧度
-            const startX = exitPointX;
-            const startY = centerY + index * 10;
-            const endX = startX + 500 * Math.cos(angle);
-            const endY = startY + 500 * Math.sin(angle);
+        ctx.setLineDash([8, 6]);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(30, beamY);
+        ctx.lineTo(endX, beamY);
+        ctx.stroke();
 
-            if (!spectrumPositions[index]) {
-                spectrumPositions[index] = { x: startX, y: startY };
-            }
+        // Beam dot
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.beginPath();
+        ctx.arc(beamX, beamY, 4, 0, Math.PI * 2);
+        ctx.fill();
 
-            const pos = spectrumPositions[index];
-            pos.x += spectrumSpeed * Math.cos(angle);
-            pos.y += spectrumSpeed * Math.sin(angle);
+        ctx.setLineDash([]);
+    }
 
-            if (pos.x > endX) {
-                pos.x = startX;
-                pos.y = startY;
-            }
+    function drawSpectrumBeams() {
+        // Only draw spectrum if beam has reached the prism entry
+        if (beamX < entryX) return;
 
-            ctx.setLineDash([10, 5]);
-            ctx.strokeStyle = color;
+        // Internal path (white → entry → exit)
+        ctx.strokeStyle = 'rgba(220, 240, 255, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(entryX, entryY);
+        ctx.lineTo(exitX, exitY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Spectrum beams
+        colors.forEach((col, i) => {
+            const rad = col.angle * Math.PI / 180;
+            const len = 280;
+            const endX = exitX + len * Math.cos(rad);
+            const endY = exitY + len * Math.sin(rad);
+
+            ctx.strokeStyle = col.c;
             ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.85;
             ctx.beginPath();
-            ctx.moveTo(refractionPointX, centerY);
-            ctx.lineTo(exitPointX, startY); // 光线在棱镜内部的路径
-            ctx.lineTo(pos.x, pos.y);
+            ctx.moveTo(exitX, exitY);
+            ctx.lineTo(endX, endY);
             ctx.stroke();
+            ctx.globalAlpha = 1;
+
+            // Color label
+            if (i === 0 || i === colors.length - 1) {
+                ctx.font = '11px "Space Grotesk", sans-serif';
+                ctx.fillStyle = col.c;
+                ctx.fillText(col.label, endX + 4, endY + 4);
+            }
         });
     }
 
+    function drawNormalLine() {
+        // Normal to prism surface at entry point
+        ctx.strokeStyle = 'rgba(140, 140, 180, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(entryX - 30, entryY - 50);
+        ctx.lineTo(entryX + 30, entryY + 50);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    function drawLabels() {
+        ctx.font = '600 15px "Space Grotesk", sans-serif';
+        ctx.fillStyle = 'rgba(52, 211, 153, 0.9)';
+        ctx.fillText('Light Reflection & Refraction', 18, 32);
+
+        ctx.font = '13px "Space Grotesk", sans-serif';
+        ctx.fillStyle = 'rgba(160, 210, 190, 0.65)';
+        ctx.fillText('White light disperses into spectrum as it refracts through glass', 18, 56);
+
+        ctx.fillStyle = 'rgba(140, 190, 170, 0.7)';
+        ctx.fillText('n(violet) > n(red)  →  violet bends most (Snell\'s Law)', 18, 80);
+    }
+
     function animate() {
-        ctx.fillStyle = 'black';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
+        drawNormalLine();
         drawPrism();
+        drawIncidentBeam();
+        drawSpectrumBeams();
+        drawLabels();
 
-        // 让白光流动
-        whiteLightX += whiteLightSpeed;
-        if (whiteLightX > centerX - prismWidth / 4) {
-            whiteLightX = 0;
-        }
-
-        drawWhiteLight();
-        drawSpectrum();
+        beamX += beamSpeed;
+        if (beamX > entryX + 20) beamX = 30;
 
         requestAnimationFrame(animate);
     }

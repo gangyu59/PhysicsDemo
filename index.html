@@ -2,24 +2,40 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Physics Demo</title>
-    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>物理演示 Physics Demo</title>
     <link rel="manifest" href="/manifest.json">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <canvas id="myCanvas" width="900" height="700" style="border:1px solid #000000;"></canvas>
-    <div class="button-container">
-        <button id="showLiquidEvaporation">Liquid Evaporation</button>
-        <button id="showCrystallization">Crystallization</button>
-        <button id="showSolidMelting">Solid Melting</button>
-        <button id="showGasLiquefaction">Gas Liquefaction</button>
-        <button id="showElectromagneticConversion">Electromagnetic Conversion</button>
-        <button id="showLightInterference">Light Interference</button>
-        <button id="showSoundDiffraction">Sound Diffraction</button>
-        <button id="showWaterSiphon">Water Siphon</button>
-        <button id="showSurfaceTension">Surface Tension</button>
-        <button id="showLightReflectionRefraction">Reflection & Refraction</button>
+    <header>
+        <h1>物理演示 Physics Demo</h1>
+        <p>点击按钮探索各种物理现象 · Click a button to explore physics phenomena</p>
+    </header>
+
+    <canvas id="myCanvas" width="900" height="700"></canvas>
+
+    <div class="button-grid">
+        <div class="section-label">相变 Phase Transitions</div>
+        <button class="btn-phase" id="showLiquidEvaporation">💧 Liquid Evaporation</button>
+        <button class="btn-phase" id="showCrystallization">❄️ Crystallization</button>
+        <button class="btn-phase" id="showSolidMelting">🌡️ Solid Melting</button>
+        <button class="btn-phase" id="showGasLiquefaction">💨 Gas Liquefaction</button>
+
+        <div class="section-label">电磁 Electromagnetism</div>
+        <button class="btn-electro" id="showElectromagneticConversion">⚡ Electromagnetic Conversion</button>
+
+        <div class="section-label">波动 Wave Phenomena</div>
+        <button class="btn-wave" id="showLightInterference">🌊 Light Interference</button>
+        <button class="btn-wave" id="showSoundDiffraction">🔔 Sound Diffraction</button>
+
+        <div class="section-label">流体 Fluid Physics</div>
+        <button class="btn-fluid" id="showWaterSiphon">🫧 Water Siphon</button>
+        <button class="btn-fluid" id="showSurfaceTension">💦 Surface Tension</button>
+
+        <div class="section-label">光学 Optics</div>
+        <button class="btn-optics" id="showLightReflectionRefraction">🌈 Reflection &amp; Refraction</button>
     </div>
 
     <script src="static/js/liquidEvaporation.js"></script>
@@ -35,10 +51,10 @@
     <script src="static/js/main.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/service-worker.js').then(function (registration) {
                     console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                }, function(err) {
+                }, function (err) {
                     console.log('ServiceWorker registration failed: ', err);
                 });
             });

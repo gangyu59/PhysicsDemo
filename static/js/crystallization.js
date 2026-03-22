@@ -1,32 +1,19 @@
 function startCrystallization(canvas, ctx, clearCanvasAndStop) {
     clearCanvasAndStop();
-    const numParticles = 1000;
+    const numParticles = 600;
     let particles = [];
-    let liquidHeight = canvas.height / 2;
+    // liquidTop is the y-coordinate where liquid begins (increases = liquid shrinks from top)
+    let liquidTop = canvas.height / 2;
     const particleSize = 3;
     let crystallizedParticles = [];
-
-    const fishIcons = ['🐟', '🐠'];
-    const numFish = 8;
-    let fish = [];
 
     function createParticle() {
         return {
             x: Math.random() * canvas.width,
-            y: liquidHeight + (Math.random() * (canvas.height - liquidHeight)),
-            vx: 0,
-            vy: -Math.random() * 2 - 1,
+            y: liquidTop + Math.random() * (canvas.height - liquidTop),
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: -Math.random() * 1.5 - 0.5,
             crystallized: false
-        };
-    }
-
-    function createFish() {
-        return {
-            x: Math.random() * canvas.width,
-            y: liquidHeight + (Math.random() * (canvas.height - liquidHeight)),
-            vx: (Math.random() * 2 - 1) * 0.5,
-            vy: (Math.random() * 2 - 1) * 0.5,
-            icon: fishIcons[Math.floor(Math.random() * fishIcons.length)]
         };
     }
 
@@ -34,38 +21,71 @@ function startCrystallization(canvas, ctx, clearCanvasAndStop) {
         particles.push(createParticle());
     }
 
-    for (let i = 0; i < numFish; i++) {
-        fish.push(createFish());
+    function drawBackground() {
+        ctx.fillStyle = '#050510';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
     function drawLiquid() {
-        ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
-        ctx.fillRect(0, liquidHeight, canvas.width, canvas.height - liquidHeight); // Liquid surface
+        const h = canvas.height - liquidTop;
+        if (h <= 0) return;
+        const grad = ctx.createLinearGradient(0, liquidTop, 0, canvas.height);
+        grad.addColorStop(0, 'rgba(20, 100, 200, 0.7)');
+        grad.addColorStop(1, 'rgba(8, 40, 120, 0.9)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, liquidTop, canvas.width, h);
+
+        ctx.strokeStyle = 'rgba(100, 180, 255, 0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, liquidTop);
+        ctx.lineTo(canvas.width, liquidTop);
+        ctx.stroke();
+    }
+
+    function drawCrystalLayer() {
+        if (liquidTop <= canvas.height / 2) return;
+        // Draw ice/crystal layer above liquid
+        const crystalH = liquidTop - canvas.height / 2;
+        const iceGrad = ctx.createLinearGradient(0, canvas.height / 2, 0, liquidTop);
+        iceGrad.addColorStop(0, 'rgba(180, 230, 255, 0.15)');
+        iceGrad.addColorStop(1, 'rgba(140, 200, 255, 0.35)');
+        ctx.fillStyle = iceGrad;
+        ctx.fillRect(0, canvas.height / 2, canvas.width, crystalH);
     }
 
     function drawParticles() {
+        // Moving particles in liquid
+        ctx.fillStyle = 'rgba(80, 160, 255, 0.6)';
         particles.forEach(p => {
             if (!p.crystallized) {
-                ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, particleSize, 0, Math.PI * 2);
                 ctx.fill();
             }
         });
 
+        // Crystallized particles — bright ice crystals
         crystallizedParticles.forEach(p => {
-            ctx.fillStyle = 'rgba(0, 0, 150, 1)'; // Deeper color for crystallized particles
+            ctx.fillStyle = 'rgba(200, 235, 255, 0.9)';
             ctx.beginPath();
-            ctx.arc(p.x, p.y, particleSize, 0, Math.PI * 2);
+            ctx.arc(p.x, p.y, particleSize + 1, 0, Math.PI * 2);
             ctx.fill();
         });
     }
 
-    function drawFish() {
-        fish.forEach(f => {
-            ctx.font = '20px Arial';
-            ctx.fillText(f.icon, f.x, f.y);
-        });
+    function drawLabels() {
+        ctx.font = '600 15px "Space Grotesk", sans-serif';
+        ctx.fillStyle = 'rgba(34, 211, 238, 0.9)';
+        ctx.fillText('Crystallization', 18, 32);
+
+        ctx.font = '13px "Space Grotesk", sans-serif';
+        ctx.fillStyle = 'rgba(180, 220, 255, 0.65)';
+        ctx.fillText('Particles rise and freeze at the liquid surface', 18, 56);
+
+        const pct = Math.min(100, Math.round(((liquidTop - canvas.height / 2) / (canvas.height / 2)) * 100));
+        ctx.fillStyle = 'rgba(34, 211, 238, 0.8)';
+        ctx.fillText('Crystallized: ' + pct + '%', 18, 80);
     }
 
     function updateParticles() {
@@ -74,51 +94,34 @@ function startCrystallization(canvas, ctx, clearCanvasAndStop) {
                 p.x += p.vx;
                 p.y += p.vy;
 
-                // Check if the particle hits the liquid surface
-                if (p.y <= liquidHeight) {
+                // Wrap horizontally
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+
+                // Crystallize when reaching the liquid surface
+                if (p.y <= liquidTop) {
+                    p.y = liquidTop + Math.random() * 5;
                     p.crystallized = true;
                     crystallizedParticles.push(p);
                 }
             }
         });
 
-        // Remove particles that have crystallized
         particles = particles.filter(p => !p.crystallized);
 
-        // Decrease liquid height to simulate crystallization
-        if (particles.length > 0 && liquidHeight > 0) {
-            liquidHeight -= 0.1;  // Adjust this value to control the speed of crystallization
+        // FIX: liquidTop increases → liquid surface moves DOWN → liquid SHRINKS (correct)
+        if (crystallizedParticles.length > 0 && liquidTop < canvas.height) {
+            liquidTop += 0.08;
         }
     }
 
-    function updateFish() {
-        fish.forEach(f => {
-            f.x += f.vx;
-            f.y += f.vy;
-
-            // Check for collisions with the canvas boundaries
-            if (f.x < 0 || f.x > canvas.width) {
-                f.vx *= -1;
-            }
-            if (f.y < liquidHeight || f.y > canvas.height) {
-                f.vy *= -1;
-            }
-
-            // Prevent fish from moving into the crystallized area
-            if (f.y < liquidHeight + 50) {
-                f.y = liquidHeight + 51;
-                f.vy *= -1;
-            }
-        });
-    }
-
     function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
         drawLiquid();
+        drawCrystalLayer();
         updateParticles();
-        updateFish();
         drawParticles();
-        drawFish();
+        drawLabels();
         requestAnimationFrame(animate);
     }
 
